@@ -1,0 +1,21 @@
+[buttons]
+
+<a class="btn btn-primary mr-2 mb-2" data-toggle="modal" data-target="#modalID">Modal</a>
+
+
+[MODAL CODE]
+ <div id="modalID" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+
+    <!-- Modal content -->
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+      </div>
+      <div class="modal-body">      
+	[FORM HERE]
+      </div>
+    </div>
+
+  </div>
+</div>
