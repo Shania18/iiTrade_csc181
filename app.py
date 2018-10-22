@@ -3,25 +3,27 @@ from flask_mysqldb import MySQL
 from wtforms import Form, StringField, TextAreaField, PasswordField, validators
 from passlib.hash import sha256_crypt
 from functools import wraps
+from extensions import app,mysql
 
-app = Flask(__name__)
 
-# Config MySQL
-app.config['MYSQL_HOST'] = 'localhost'
-app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = 'root'
-app.config['MYSQL_DB'] = 'trade'
-app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
+#import blueprints
+from blueprints.LoginBlueprint import login_blueprint
+from blueprints.SignupBlueprint import signup_blueprint
 
-# init MYSQL
-mysql = MySQL(app)
+
+#register blueprints
+app.register_blueprint(login_blueprint)
+app.register_blueprint(signup_blueprint)
 
 # Index
 @app.route('/')
 def index():
-    return render_template('home.html')
+    return render_template('landpage.html')
 
-
+# Home
+@app.route('/home')
+def home():
+    return render_template('index.html')
 # About
 @app.route('/about')
 def about():
@@ -60,90 +62,7 @@ def item(id):
     item = cur.fetchone()
 
     return render_template('item.html', item=item)
-
-
-# Register Form Class
-class RegisterForm(Form):
-    fname = StringField('FirstName', [validators.Length(min=1, max=50)])
-    lname = StringField('Lastname', [validators.Length(min=4, max=25)])
-    cnumber = StringField('Contactnumber', [validators.Length(min=6, max=50)])
-    email = StringField('Email', [validators.Length(min=6, max=50)])
-    address = StringField('Address', [validators.Length(min=10, max=100)])
-    password = PasswordField('Password', [
-        validators.DataRequired(),
-        validators.EqualTo('confirm', message='Passwords do not match')
-    ])
-    confirm = PasswordField('Confirm Password')
-
-
-# User Register
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    form = RegisterForm(request.form)
-    if request.method == 'POST' and form.validate():
-        fname = form.fname.data
-        lname = form.lname.data
-        cnumber = form.cnumber.data
-        email = form.email.data
-        address = form.address.data
-        password = sha256_crypt.encrypt(str(form.password.data))
-
-        # Create cursor
-        cur = mysql.connection.cursor()
-
-        # Execute query
-        cur.execute("INSERT INTO user_registration(firstname, lastname, contactno, email, address, password) VALUES(%s, %s, %s, %s, %s, %s)", (fname, lname, cnumber, email, address, password))
-
-        # Commit to DB
-        mysql.connection.commit()
-
-        # Close connection
-        cur.close()
-
-        flash('You are now registered and can log in', 'success')
-
-        return redirect(url_for('login'))
-    return render_template('register.html', form=form)
-
-
-# User login
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        # Get Form Fields
-        email = request.form['email']
-        password_candidate = request.form['password']
-
-        # Create cursor
-        cur = mysql.connection.cursor()
-
-        # Get user by email
-        result = cur.execute("SELECT * FROM user_registration WHERE email = %s", [email])
-
-        if result > 0:
-            # Get stored hash
-            data = cur.fetchone()
-            password = data['password']
-
-            # Compare Passwords
-            if sha256_crypt.verify(password_candidate, password):
-                # Passed
-                session['logged_in'] = True
-                session['email'] = email
-
-                flash('You are now logged in', 'success')
-                return redirect(url_for('dashboard'))
-            else:
-                error = 'Invalid login'
-                return render_template('login.html', error=error)
-            # Close connection
-            cur.close()
-        else:
-            error = 'User not found'
-            return render_template('login.html', error=error)
-
-    return render_template('login.html')
-
+    
 # Check if user logged in
 def is_logged_in(f):
     @wraps(f)
