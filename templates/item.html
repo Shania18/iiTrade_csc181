@@ -1,0 +1,10 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+  <h1>{{item.itemname}}</h1>
+  <small>Uploaded by ____  on ____</small>
+  <hr>
+  <div>
+    {{item.description | safe}}
+  </div>
+{% endblock %}
